@@ -1,52 +1,97 @@
-import java.net.*;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.PrintWriter;
+import java.net.Inet4Address;
+import java.net.InetAddress;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.util.HashSet;
 
-public class GreetingServer extends Thread {
-   private ServerSocket serverSocket;
-   
-   public GreetingServer(int port) throws IOException {
-      serverSocket = new ServerSocket(port);
-      System.out.println(serverSocket.getInetAddress());
-      serverSocket.setSoTimeout(10000);
-   }
+import jdk.nashorn.internal.ir.annotations.Ignore;
 
-   public void run() {
-      while(true) {
-         try {
-            System.out.println("Waiting for client on port " + 
-               serverSocket.getLocalPort() + "...");
-            Socket server = serverSocket.accept();
-            
-            System.out.println("Just connected to " + server.getRemoteSocketAddress());
-            DataInputStream in = new DataInputStream(server.getInputStream());
-            BufferedReader bf = new BufferedReader(new InputStreamReader(in));
-            while(true) {
-            		String h = bf.readLine();
-            		if(h!=null)
-               System.out.println(h);
+
+public class GreetingServer {
+
+    private static final int PORT = 9002;
+    private static HashSet<String> names = new HashSet<String>();
+    private static HashSet<PrintWriter> writers = new HashSet<PrintWriter>();
+
+    public static void main(String[] args) throws Exception {
+        System.out.println("The chat server is running.");
+        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
+    	String s = br.readLine();
+    	if (s.equalsIgnoreCase("HELO BASE_TEST")){
+    		System.out.println("HELO BASE_TEST" + "\n" + "IP: " + InetAddress.getLocalHost() + "\n" + "Port: " + PORT  + "\n" + "Student ID : 17312704");
+    	}
+        ServerSocket listener = new ServerSocket(PORT);
+        try {
+            while (true) {
+                new Handler(listener.accept()).start();
             }
-            /*System.out.println("here");
-            DataOutputStream out = new DataOutputStream(server.getOutputStream());
-            out.writeUTF("Thank you for connecting to " + server.getLocalSocketAddress()
-               + "\nGoodbye!");
-            server.close();*/
-            
-         }catch(SocketTimeoutException s) {
-            System.out.println("Socket timed out!");
-            break;
-         }catch(IOException e) {
-            e.printStackTrace();
-            break;
-         }
-      }
-   }
-   
-   public static void main(String [] args) {
-      try {
-         Thread t = new GreetingServer(4445);
-         t.start();
-      }catch(IOException e) {
-         e.printStackTrace();
-      }
-   }
+        } finally {
+            listener.close();
+        }
+    }
+
+    private static class Handler extends Thread {
+        private String name;
+        private Socket socket;
+        private BufferedReader in;
+        private PrintWriter out;
+
+        public Handler(Socket socket) {
+            this.socket = socket;
+        }
+
+        public void run() {
+            try {
+
+                // Create character streams for the socket.
+                in = new BufferedReader(new InputStreamReader(
+                    socket.getInputStream()));
+                out = new PrintWriter(socket.getOutputStream(), true);
+               
+                while (true) {
+                    out.println("SUBMITNAME");
+                    name = in.readLine();
+                    if (name == null) {
+                        return;
+                    }
+                    synchronized (names) {
+                        if (!names.contains(name)) {
+                            names.add(name);
+                            break;
+                        }
+                    }
+                }
+                out.println("NAMEACCEPTED");
+                writers.add(out);
+
+                while (true) {
+                    String input = in.readLine();
+                    if (input == null) {
+                        return;
+                    }
+                    for (PrintWriter writer : writers) {
+                        writer.println("MESSAGE " + name + ": " + input);
+                    }
+                }
+            } catch (IOException e) {
+                System.out.println(e);
+            } finally {
+           
+                if (name != null) {
+                    names.remove(name);
+                }
+                if (out != null) {
+                    writers.remove(out);
+                }
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                }
+            }
+        }
+    }
 }
