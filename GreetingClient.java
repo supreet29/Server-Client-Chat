@@ -1,106 +1,86 @@
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.io.DataInputStream;
+import java.io.PrintStream;
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStreamReader;
-import java.io.PrintWriter;
+import java.io.IOException;
 import java.net.Socket;
+import java.net.UnknownHostException;
 
-import javax.swing.JFrame;
-import javax.swing.JOptionPane;
-import javax.swing.JScrollPane;
-import javax.swing.JTextArea;
-import javax.swing.JTextField;
+public class GreetingClient implements Runnable {
 
-public class GreetingClient {
+  // The client socket
+  private static Socket clientSocket = null;
+  // The output stream
+  private static PrintStream os = null;
+  // The input stream
+  private static DataInputStream is = null;
 
-    BufferedReader in;
-    PrintWriter out;
-    JFrame frame = new JFrame("Chat Room");
-    JTextField textField = new JTextField(40);
-    JTextArea messageArea = new JTextArea(8, 40);
-    int port = 9002;
+  private static BufferedReader inputLine = null;
+  private static boolean closed = false;
+  
+  public static void main(String[] args) {
 
-    public GreetingClient() {
+    // The default port.
+    int portNumber = 2221;
+    // The default host.
+    String host = "localhost";
 
-        // Layout GUI
-        textField.setEditable(false);
-        messageArea.setEditable(false);
-        frame.getContentPane().add(textField, "North");
-        frame.getContentPane().add(new JScrollPane(messageArea), "Center");
-        frame.pack();
-
-        // Add Listeners
-        textField.addActionListener(new ActionListener() {
-            /**
-             * Responds to pressing the enter key in the textfield by sending
-             * the contents of the text field to the server.    Then clear
-             * the text area in preparation for the next message.
-             */
-            public void actionPerformed(ActionEvent e) {
-                out.println(textField.getText());
-                textField.setText("");
-            }
-        });
+    if (args.length < 2) {
+      System.out
+          .println("Usage: Client Connecting.....<host> <portNumber>\n"
+              + "Now using host=" + host + ", portNumber=" + portNumber);
+    } else {
+      host = args[0];
+      portNumber = Integer.valueOf(args[1]).intValue();
+    }
+ 
+    try {
+      clientSocket = new Socket(host, portNumber);
+      inputLine = new BufferedReader(new InputStreamReader(System.in));
+      os = new PrintStream(clientSocket.getOutputStream());
+      is = new DataInputStream(clientSocket.getInputStream());
+    } catch (UnknownHostException e) {
+      System.err.println("Don't know about host " + host);
+    } catch (IOException e) {
+      System.err.println("Couldn't get I/O for the connection to the host "
+          + host);
     }
 
-    
-     // Prompt for and return the address of the server.
-    
-    private String getServerAddress() {
-        String answer =  JOptionPane.showInputDialog(
-            frame,
-            "Enter IP Address of the Server:",
-            "Welcome to the Chat Room",
-            JOptionPane.QUESTION_MESSAGE);
-        return answer;
-    }
+    if (clientSocket != null && os != null && is != null) {
+      try {
 
-    
-     // Prompt for and return the desired screen name.
-     
-    private String getName() {
-        return JOptionPane.showInputDialog(
-            frame,
-            "Enter a screen name:",
-            "Screen name selection",
-            JOptionPane.PLAIN_MESSAGE);
-    }
-
-
-    private void run() throws IOException {
-
-        // Make connection
-        String serverAddress = getServerAddress();
-        Socket socket = new Socket(serverAddress, port);
-        System.out.println("Connecting to " + serverAddress + " on port " + port);
-        System.out.println("Just connected to " + socket.getRemoteSocketAddress());
-        in = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-        out = new PrintWriter(socket.getOutputStream(), true);
-
-        // Process all messages from server
-        while (true) {
-            String line = in.readLine();
-            if (line.startsWith("SUBMITNAME")) {
-                out.println(getName());
-            } else if (line.startsWith("NAMEACCEPTED")) {
-                textField.setEditable(true);
-            } else if (line.startsWith("MESSAGE")) {
-                messageArea.append(line.substring(8) + "\n");
-               // if(line.split(" ")[2].equalsIgnoreCase("hello base_test")){
-                //	messageArea.append("HELLO MATE" + "\n");
-                //}
-            } 
+        // Create a thread to read from the server.
+        new Thread(new GreetingClient()).start();
+        while (!closed) {
+          os.println(inputLine.readLine().trim());
         }
+        
+         // Close the output stream,input stream and the socket.
+         
+        os.close();
+        is.close();
+        clientSocket.close();
+      } catch (IOException e) {
+        System.err.println("IOException:  " + e);
+      }
     }
+  }
 
-    
-     //Runs the client as an application with a closeable frame.
-     
-    public static void main(String[] args) throws Exception {
-    	GreetingClient client = new GreetingClient();
-        client.frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        client.frame.setVisible(true);
-        client.run();
+  
+   // Create a thread to read from the server.
+   
+  public void run() {
+    //Leaving the chat room
+    String responseLine;
+    try {
+      while ((responseLine = is.readLine()) != null) {
+        System.out.println(responseLine);
+        if (responseLine.indexOf("*** Bye") != -1)
+          break;
+      }
+      closed = true;
+    } catch (IOException e) {
+      System.err.println("IOException:  " + e);
     }
+  }
 }
