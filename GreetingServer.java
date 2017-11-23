@@ -24,7 +24,7 @@ public class GreetingServer {
   public static void main(String args[]) {
 
     // The default port number.
-    int portNumber = 2221;
+    int portNumber = 2226;
     if (args.length < 1) {
       System.out.println("Usage: Server Started..... <portNumber>\n"
           + "Now using port number=" + portNumber);
@@ -95,7 +95,7 @@ class clientThread extends Thread {
   public void run() {
     int maxClientsCount = this.maxClientsCount;
     clientThread[] threads = this.threads;
-
+    
     try {
       
        //Create input and output streams for this client.
@@ -104,7 +104,8 @@ class clientThread extends Thread {
       os = new PrintStream(clientSocket.getOutputStream());
       String name;
       while (true) {
-        os.println("Enter your name.");
+    	os.println("HELO BASE_TEST" + "\n" + "IP: " + InetAddress.getLocalHost() + "\n" + "Port:2222 "  + "\n" + "Student ID:17312704");
+    	os.println("Enter your name.");
         name = is.readLine().trim();
         if (name.indexOf('@') == -1) {
           break;
