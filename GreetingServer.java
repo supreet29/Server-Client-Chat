@@ -18,13 +18,13 @@ public class GreetingServer {
   private static Socket clientSocket = null;
 
   // This chat server can accept up to maxClientsCount clients connections.
-  private static final int maxClientsCount = 10;
+  private static final int maxClientsCount = 100;
   private static final clientThread[] threads = new clientThread[maxClientsCount];
 
   public static void main(String args[]) {
 
     // The default port number.
-    int portNumber = 2226;
+    int portNumber = 2225;
     if (args.length < 1) {
       System.out.println("Usage: Server Started..... <portNumber>\n"
           + "Now using port number=" + portNumber);
@@ -44,16 +44,6 @@ public class GreetingServer {
     
      // Create a client socket for each connection and pass it to a new client thread.
      
-    try {
-    BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
-	String s = br.readLine();
-	if (s.equalsIgnoreCase("HELLO BASE_TEST")){
-		System.out.println("HELLO BASE_TEST" + "\n" + "IP: " + InetAddress.getLocalHost() + "\n" + "Port: " + portNumber  + "\n" + "Student ID : 17312704");
-	}
-    } catch (IOException e) {
-    	System.out.println(e);
-    }
-	
     while (true) {
       try {
         clientSocket = serverSocket.accept();
@@ -104,7 +94,7 @@ class clientThread extends Thread {
       os = new PrintStream(clientSocket.getOutputStream());
       String name;
       while (true) {
-    	os.println("HELO BASE_TEST" + "\n" + "IP: " + InetAddress.getLocalHost() + "\n" + "Port:2222 "  + "\n" + "Student ID:17312704");
+    	os.println("HELO BASE_TEST" + "\n" + "IP: " + InetAddress.getLocalHost() + "\n" + "Port:2225 "  + "\n" + "Student ID:17312704");
     	os.println("Enter your name.");
         name = is.readLine().trim();
         if (name.indexOf('@') == -1) {
@@ -116,7 +106,7 @@ class clientThread extends Thread {
 
       // Welcome the new the client.
       os.println("Welcome " + name
-          + " to our chat room.\nTo leave enter quit in a new line.");
+          + " to chat room.\nTo leave enter /quit in a new line.");
       synchronized (this) {
         for (int i = 0; i < maxClientsCount; i++) {
           if (threads[i] != null && threads[i] == this) {
@@ -134,7 +124,7 @@ class clientThread extends Thread {
       // Start the conversation.
       while (true) {
         String line = is.readLine();
-        if (line.startsWith("quit")) {
+        if (line.startsWith("/quit")) {
           break;
         }
         // If the message is private sent it to the given client.
