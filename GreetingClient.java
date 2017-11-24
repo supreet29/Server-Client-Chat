@@ -21,7 +21,7 @@ public class GreetingClient implements Runnable {
   public static void main(String[] args) {
 
     // The default port.
-    int portNumber = 2226;
+    int portNumber = 2225;
     // The default host.
     String host = "localhost";
 
