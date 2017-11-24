@@ -27,7 +27,7 @@ public class GreetingClient implements Runnable {
 
     if (args.length < 2) {
       System.out
-          .println("Usage: Client Connecting.....<host> <portNumber>\n"
+          .println("Client Connecting.....<host> <portNumber>\n"
               + "Now using host=" + host + ", portNumber=" + portNumber);
     } else {
       host = args[0];
