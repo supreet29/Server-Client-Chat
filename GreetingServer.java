@@ -26,7 +26,7 @@ public class GreetingServer {
     // The default port number.
     int portNumber = 2225;
     if (args.length < 1) {
-      System.out.println("Usage: Server Started..... <portNumber>\n"
+      System.out.println("Server Started..... <portNumber>\n"
           + "Now using port number=" + portNumber);
     } else {
       portNumber = Integer.valueOf(args[0]).intValue();
